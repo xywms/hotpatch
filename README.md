@@ -1,1 +1,1 @@
-运行getinfo.cpp文件
+运行getinfo.cpp

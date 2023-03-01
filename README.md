@@ -1,1 +1,1 @@
-运行getinfo.cpp
+运行getinfo

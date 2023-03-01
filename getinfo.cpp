@@ -728,6 +728,9 @@ int main() {
     //进行编译
     //cmdopen("cd " + kernelcodepath + "&&echo " + sudo_password + " | sudo -S ./testmake.sh ");
 
+    //清空文件内容
+    cmdopen("cd " + kernelcodepath + "&& " + "rm -rf result.txt");
+    cmdopen("cd " + kernelcodepath + "&& " + "rm -rf asm.txt");
     //遍历funclist
     for(set<string>::iterator it = funclist.begin();it != funclist.end(); it++) {
         //输出函数汇编码
@@ -743,249 +746,246 @@ int main() {
         fcompile<<"startaddress=$(nm -n vmlinux | grep -w \"\\w\\s$symbol\" | awk '{print \"0x\"$1;exit}') "<<endl;
         fcompile<<"endaddress=$(nm -n vmlinux | grep -w -A1 \"\\w\\s$symbol\" | awk '{getline; print \"0x\"$1;exit}')"<<endl;
         fcompile<<"echo \"start-address: $startaddress, end-address: $endaddress\""<<endl;
-        fcompile<<"aarch64-linux-gnu-objdump -d vmlinux --start-address=$startaddress --stop-address=$endaddress >> asm.txt"<<endl;
+        //objdump的路径需要在交叉编译链下
+        fcompile<<arm_linux_path<<"objdump -d vmlinux --start-address=$startaddress --stop-address=$endaddress > asm.txt"<<endl;
         fcompile.close();
         cmdopen("cd " + kernelcodepath + "&&" + "chmod u+x testout.sh");
         cmdopen("cd " + kernelcodepath + "&&" + " ./testout.sh " + *it);
 
         //输出函数名
-        cmdopen("cd " + kernelcodepath + "&& echo " + *it + " > result.txt");
+        cmdopen("cd " + kernelcodepath + "&& echo " + *it + " >> result.txt");
         //输出函数入口地址
         string funcaddr = cmdopen("cd " + kernelcodepath + "&&" + "grep -w " + *it + " System.map ");
         cmdopen("cd " + kernelcodepath + "&& echo " + funcaddr.substr(0, 16) + " >> result.txt");
 
-
-    //     //计算机器码,写入result文件
-    //     ifstream fp;
-    //     //将所有字符串保存在vector中
-    //     vector<string>v;
-    //     int count = 0;
-    //     int i = 0;
-    //     //指定打开方式
-    //     fp.open("asm.txt", ios::in);
-    //     //按行读入字符串
-    //     while(!fp.eof()){
-    //         string str;
-    //         getline(fp, str);
-    //         //去除空格行
-    //         if(str != "" ) {
-    //             if(str.substr(0,1) == "f")
-    //             {
-    //                 count++;
-    //                 v.push_back(str);
-    //             }
-            
-    //         }
-    //     }
-    //     //去掉末尾下一个函数的干扰
-    //     if(v[count - 1].substr(16,1) != ":") {
-    //         v.pop_back();
-    //         count--;
-    //     }
-    //     vector<ll_64>addr(count);
-    //     vector<ul_32>mcode(count);
-    //     //记录bl指令的索引
-    //     vector<int>bl_id(count);
-    //     //bl_id的前缀和
-    //     vector<int>bl_id_s(count);
-    //     //初始化bl_id
-    //     for(int i = all_start; i < count ; i++) {
-    //         bl_id[i] = 0;
-    //     }
-    
-    //     //寻找mcode的开始位置
-    //     for(int i = 18; i < 25; i++) {
-    //         if(v[1][i] != ' ') {
-    //             mcode_startid = i;
-    //             break;
-    //         } 
-    //     }
-    //     cout<<"mcode_startid:"<<mcode_startid<<endl;
-    //     //寻找指令字符的开始位置
-    //     for(int i = mcode_startid + 8; i < 35; i++) {
-    //         if(v[1][i] != ' ') {
-    //             instruct_startid = i;
-    //             break;
-    //         } 
-    //     }
-    //     cout<<"instruct_startid:"<<instruct_startid<<endl;
-    //     //记录bl指令的位置
-    //     for(int i = all_start; i < count; i++) {
-    //         addr[i] = strtoull(v[i].substr(0,16).c_str(), NULL, 16);
-    //         mcode[i] = strtoul(v[i].substr(mcode_startid,8).c_str(), NULL, 16);
-    //         //printf("mcode[i]:0x%x\n",mcode[i]);
-    //         m_addr_instruc.insert({addr[i],i});
-    //         if(mcode_instruc(mcode[i]) == "bl") {
-    //             cout<<i<<"bl_id = 1"<<endl;
-    //             bl_id[i] = 1;
-    //             bl_count_all++;
-    //         }
-    //     }
-    //     //输入开始与结束索引，计算两者之间的1的数量，用一维前缀和
-    
-    //     for(int i = all_start + 1; i < count ; i++) {
-    //         bl_id_s[i] = bl_id_s[i - 1] + bl_id[i];
-    //     }
-    // //重新计算与替换其他跳转指令
-    //     //--------------------输出到文件
-    //     ofstream fs;
-    //     fs.open("result.txt", ios::out);
-    //     //文件写入
-    //     fs<<"uint32_t inst_list[";
-    //     //机器码的总数量
-    //     fs<<(count -1 + bl_count_all * 5);
-    //     fs<<"] = {";
-    //     for(int i = all_start; i < count ; i++) {
-    //         if(mcode_instruc(mcode[i]) == "bl") {
-    //             cout<<i<<" is bl"<<endl;
-    //             //查询addr_jmp的位置
-    //             int addr_jmp_startid;
-    //             for(int k = instruct_startid + 8;;k++) {
-    //                 if(v[i][k] != ' ') {
-    //                     addr_jmp_startid = k;
-    //                     break;
-    //                 }
-    //             }
-    //             //ll_64 bl_addr_jmp = strtoull(v[i].substr(addr_jmp_startid, 16).c_str(), NULL, 16);
-    //             ll_64 bl_addr_jmp = cal_bl_jmp(addr[i], mcode[i]);
-    //             // printf("cal_str:0x%x\n",cal_str(0x4));
-    //             ul_32 res_cal_str = cal_str(0x4);
-    //             ul_32 res_cal_mov = cal_mov(addr[i], mcode[i],bl_addr_jmp);
-    //             ul_32 res_cal_movk_16 = cal_movk_16(bl_addr_jmp);
-    //             ul_32 res_cal_movk_32 = cal_movk_32(bl_addr_jmp);
-    //             ul_32 res_cal_blr = cal_blr(0x4);
-    //             ul_32 res_cal_ldr = cal_ldr(0x4);
-    //             //需要转换
-    //             fs<<"0x"<<hex<<res_cal_str<<",";
-    //             fs<<"0x"<<hex<<res_cal_mov<<",";
-    //             fs<<"0x"<<hex<<res_cal_movk_16<<",";
-    //             fs<<"0x"<<hex<<res_cal_movk_32<<",";
-    //             fs<<"0x"<<hex<<res_cal_blr<<",";
-    //             fs<<"0x"<<hex<<res_cal_ldr;
-    //             //printf("cal_str:0x%x\n",cal_str(0x4));
-    //             printf("cal_mov:0x%x\n",res_cal_mov);
-    //             printf("cal_movk_16:0x%x\n",res_cal_movk_16);
-    //             printf("cal_movk_32:0x%x\n",res_cal_movk_32);
-    //             printf("cal_blr:0x%x\n",res_cal_blr);
-    //             //printf("cal_ldr:0x%x\n",cal_ldr(0x4));
-    //             printf("\n");
-    //         }
-    //         else if(mcode_instruc(mcode[i]) == "adrp") {
-    //             cout<<i<<" is adrp"<<endl;
-    //             //ll_64 adrp_addr_jmp = strtoull(v[i].substr(v[i].find(",") + 2,16).c_str(), NULL, 16);
-    //             //ffffff8010634738:    90ffffe0     adrp    x0, ffffff8010630000
-    //             ll_64 adrp_addr_jmp = cal_adrp_jmp(addr[i], mcode[i]); 
-    //             //printf("adrp_addr_jmp:0x%llx\n",adrp_addr_jmp);
-    //             ul_32 res_cal_adrp = cal_adrp(adrp_addr_jmp,mcode[i]);
-    //             fs<<"0x"<<hex<<res_cal_adrp;
-    //             printf("cal_adrp:0x%x\n",res_cal_adrp);
-    //             printf("\n");
-    //         }
-    //         else if(mcode_instruc(mcode[i]) == "b.cond") {
-    //             cout<<i<<" is b.cond"<<endl;
-    //             //计算bl_count
-    //             //  //查询addr_jmp的位置
-    //             // int addr_jmp_startid;
-    //             // for(int k = instruct_startid + 8;;k++) {
-    //             //     if(v[i][k] != ' ') {
-    //             //         addr_jmp_startid = k;
-    //             //         break;
-    //             //     }
-    //             // }
-    //             ll_64 bcond_addr_jmp = cal_beq_addr_jmp(addr[i], mcode[i]);
-    //             //printf("bcond_addr_jmp:0x%llx\n",bcond_addr_jmp);
-    //             bl_count = cal_bl_count(addr[i], bcond_addr_jmp,bl_id_s);
-    //             //cout<<bl_count;
-    //             ul_32 res_cal_beq = cal_beq(addr[i], mcode[i]);
-    //             fs<<"0x"<<hex<<res_cal_beq;
-    //             printf("cal_beq:0x%x\n",res_cal_beq);
-    //             printf("\n");
-    //         }
-    //         else if(mcode_instruc(mcode[i]) == "b") {
-    //             cout<<i<<" is b"<<endl;
-    //             //查询addr_jmp的位置
-    //             // int addr_jmp_startid;
-    //             // for(int k = instruct_startid + 8;;k++) {
-    //             //     if(v[i][k] != ' ') {
-    //             //         addr_jmp_startid = k;
-    //             //         break;
-    //             //     }
-    //             // }
-    //             //
-    //             ll_64 b_addr_jmp = cal_b_addr_jmp(addr[i], mcode[i]);
-    //             bl_count = cal_bl_count(addr[i], b_addr_jmp, bl_id_s);
-            
-    //             //cout<<"bl_count:"<<bl_count;
-    //             ul_32 res_cal_b = cal_b(addr[i], mcode[i]);
-    //             fs<<"0x"<<hex<<res_cal_b;
-    //             printf("cal_b:0x%x\n",res_cal_b);
+        //计算机器码
+        ifstream fp;
+        //将所有字符串保存在vector中
+        vector<string>v;
+        int count = 0;
+        //指定打开方式
+        fp.open(kernelcodepath + "/asm.txt", ios::in);
+        //按行读入字符串
+        while(!fp.eof()){
+            string str;
+            getline(fp, str);
+            //去除空格行
+            if(str != "" ) {
+                if(str.substr(0,1) == "f")
+                {
+                    count++;
+                    v.push_back(str);
+                }
                 
-    //             printf("\n");
-    //         }
-    //         else if(mcode_instruc(mcode[i]) == "cbz") {
-    //             cout<<i<<" is cbz"<<endl;
-    //             ll_64 cbz_addr_jmp = cal_cbz_addr_jmp(addr[i], mcode[i]);
-    //             //printf("cbz_addr_jmp:0x%llx\n",cbz_addr_jmp);
-    //             bl_count = cal_bl_count(addr[i], cbz_addr_jmp, bl_id_s);
-    //             //cout<<"bl_count:"<<bl_count<<",";
-    //             ul_32 res_cal_cbz = cal_cbz(addr[i], mcode[i]);
-    //             fs<<"0x"<<hex<<res_cal_cbz;
-    //             printf("cal_cbz:0x%x\n",res_cal_cbz);
-    //             printf("\n");
-    //         }
-    //         else if(mcode_instruc(mcode[i]) == "cbnz") {
-    //             cout<<i<<" is cbnz"<<endl;
-    //             ll_64 cbnz_addr_jmp = cal_cbnz_addr_jmp(addr[i], mcode[i]);
-    //             //printf("cbnz_addr_jmp:0x%llx\n",cbnz_addr_jmp);
-    //             bl_count = cal_bl_count(addr[i], cbnz_addr_jmp, bl_id_s);
-    //             //cout<<"bl_count:"<<bl_count<<",";
-    //             ul_32 res_cal_cbnz = cal_cbnz(addr[i], mcode[i]);
-    //             fs<<"0x"<<hex<<res_cal_cbnz;
-    //             printf("cal_cbnz:0x%x\n",res_cal_cbnz);
-    //             printf("\n");
-
-    //         } 
-                
-    //         else if(mcode_instruc(mcode[i]) == "tbz") {
-    //             cout<<i<<" is tbz"<<endl;
-    //             //
-    //             ll_64 tbz_addr_jmp = cal_tbz_addr_jmp(addr[i], mcode[i]);
-    //             //printf("cbnz_addr_jmp:0x%llx\n",cbnz_addr_jmp);
-    //             bl_count = cal_bl_count(addr[i], tbz_addr_jmp, bl_id_s);
-    //             //cout<<"bl_count:"<<bl_count<<",";
-    //             ul_32 res_cal_tbz = cal_tbz(addr[i], mcode[i]);
-    //             fs<<"0x"<<hex<<res_cal_tbz;
-    //             printf("cal_tbz:0x%x\n",res_cal_tbz);
-    //             printf("\n");
-    //         }
-    //         else if(mcode_instruc(mcode[i]) == "tbnz") {
-    //             cout<<i<<" is tbnz"<<endl;
-    //             ll_64 tbnz_addr_jmp = cal_tbnz_addr_jmp(addr[i], mcode[i]);
-    //             //printf("tbnz_addr_jmp:0x%llx\n",tbnz_addr_jmp);
-    //             bl_count = cal_bl_count(addr[i], tbnz_addr_jmp, bl_id_s);
-    //             //cout<<"bl_count:"<<bl_count<<",";
-    //             ul_32 res_cal_tbnz = cal_tbnz(addr[i], mcode[i]);
-    //             fs<<"0x"<<hex<<res_cal_tbnz;
-    //             printf("cal_tbnz:0x%x\n",res_cal_tbnz);
-    //             printf("\n");
+            }
+        }
+        //去掉末尾下一个函数的干扰
+        if(v[count - 1].substr(16,1) != ":") {
+            v.pop_back();
+            count--;
+        }
+        vector<ll_64>addr(count);
+        vector<ul_32>mcode(count);
+        //记录bl指令的索引
+        vector<int>bl_id(count);
+        //bl_id的前缀和
+        vector<int>bl_id_s(count);
+    //初始化bl_id
+        for(int i = all_start; i < count ; i++) {
+            bl_id[i] = 0;
+        }
         
-    //         }
-    //         else {
-    //             cout<<i<<":";
-    //             fs<<"0x"<<hex<<mcode[i];
-    //             //printf("mcode:0x%x\n",mcode[i]);
-    //         }
-    //         if(i != count - 1) {
-    //             fs<<",";
-    //         }
-    //         if(i % 5 == 0) {
-    //             //fs<<endl;
-    //         }
-    //     }
-    //     fs<<"};";
-    //     //还需要函数入口地址
-    //     //fs<<v[all_start].substr(0,16).c_str();
-    //     fs.close();
+        //寻找mcode的开始位置
+        for(int i = 18; i < 25; i++) {
+            if(v[1][i] != ' ') {
+                mcode_startid = i;
+                break;
+            } 
+        }
+        cout<<"mcode_startid:"<<mcode_startid<<endl;
+        //寻找指令字符的开始位置
+        for(int i = mcode_startid + 8; i < 35; i++) {
+            if(v[1][i] != ' ') {
+                instruct_startid = i;
+                break;
+            } 
+        }
+        cout<<"instruct_startid:"<<instruct_startid<<endl;
+        //记录bl指令的位置
+        for(int i = all_start; i < count; i++) {
+            addr[i] = strtoull(v[i].substr(0,16).c_str(), NULL, 16);
+            mcode[i] = strtoul(v[i].substr(mcode_startid,8).c_str(), NULL, 16);
+            //printf("mcode[i]:0x%x\n",mcode[i]);
+            m_addr_instruc.insert({addr[i],i});
+            if(mcode_instruc(mcode[i]) == "bl") {
+                cout<<i<<"bl_id = 1"<<endl;
+                bl_id[i] = 1;
+                bl_count_all++;
+            }
+        }
+        //输入开始与结束索引，计算两者之间的1的数量，用一维前缀和
+    
+        for(int i = all_start + 1; i < count ; i++) {
+            bl_id_s[i] = bl_id_s[i - 1] + bl_id[i];
+        }
+    //重新计算与替换其他跳转指令
+        //--------------------输出到文件
+        ofstream fs;
+        fs.open(kernelcodepath + "/result.txt", ios::app);
+        //文件写入
+        fs<<"uint32_t inst_list[";
+        //机器码的总数量
+        fs<<(count -1 + bl_count_all * 5);
+        fs<<"] = {";
+        for(int i = all_start; i < count ; i++) {
+            if(mcode_instruc(mcode[i]) == "bl") {
+                cout<<i<<" is bl"<<endl;
+                //查询addr_jmp的位置
+                int addr_jmp_startid;
+                for(int k = instruct_startid + 8;;k++) {
+                    if(v[i][k] != ' ') {
+                        addr_jmp_startid = k;
+                        break;
+                    }
+                }
+                //ll_64 bl_addr_jmp = strtoull(v[i].substr(addr_jmp_startid, 16).c_str(), NULL, 16);
+                ll_64 bl_addr_jmp = cal_bl_jmp(addr[i], mcode[i]);
+                // printf("cal_str:0x%x\n",cal_str(0x4));
+                ul_32 res_cal_str = cal_str(0x4);
+                ul_32 res_cal_mov = cal_mov(addr[i], mcode[i],bl_addr_jmp);
+                ul_32 res_cal_movk_16 = cal_movk_16(bl_addr_jmp);
+                ul_32 res_cal_movk_32 = cal_movk_32(bl_addr_jmp);
+                ul_32 res_cal_blr = cal_blr(0x4);
+                ul_32 res_cal_ldr = cal_ldr(0x4);
+                //需要转换
+                fs<<"0x"<<hex<<res_cal_str<<",";
+                fs<<"0x"<<hex<<res_cal_mov<<",";
+                fs<<"0x"<<hex<<res_cal_movk_16<<",";
+                fs<<"0x"<<hex<<res_cal_movk_32<<",";
+                fs<<"0x"<<hex<<res_cal_blr<<",";
+                fs<<"0x"<<hex<<res_cal_ldr;
+                //printf("cal_str:0x%x\n",cal_str(0x4));
+                printf("cal_mov:0x%x\n",res_cal_mov);
+                printf("cal_movk_16:0x%x\n",res_cal_movk_16);
+                printf("cal_movk_32:0x%x\n",res_cal_movk_32);
+                printf("cal_blr:0x%x\n",res_cal_blr);
+                //printf("cal_ldr:0x%x\n",cal_ldr(0x4));
+                printf("\n");
+            }
+            else if(mcode_instruc(mcode[i]) == "adrp") {
+                cout<<i<<" is adrp"<<endl;
+                //ll_64 adrp_addr_jmp = strtoull(v[i].substr(v[i].find(",") + 2,16).c_str(), NULL, 16);
+                //ffffff8010634738:    90ffffe0     adrp    x0, ffffff8010630000
+                ll_64 adrp_addr_jmp = cal_adrp_jmp(addr[i], mcode[i]); 
+                //printf("adrp_addr_jmp:0x%llx\n",adrp_addr_jmp);
+                ul_32 res_cal_adrp = cal_adrp(adrp_addr_jmp,mcode[i]);
+                fs<<"0x"<<hex<<res_cal_adrp;
+                printf("cal_adrp:0x%x\n",res_cal_adrp);
+                printf("\n");
+            }
+            else if(mcode_instruc(mcode[i]) == "b.cond") {
+                cout<<i<<" is b.cond"<<endl;
+                //计算bl_count
+                //  //查询addr_jmp的位置
+                // int addr_jmp_startid;
+                // for(int k = instruct_startid + 8;;k++) {
+                //     if(v[i][k] != ' ') {
+                //         addr_jmp_startid = k;
+                //         break;
+                //     }
+                // }
+                ll_64 bcond_addr_jmp = cal_beq_addr_jmp(addr[i], mcode[i]);
+                //printf("bcond_addr_jmp:0x%llx\n",bcond_addr_jmp);
+                bl_count = cal_bl_count(addr[i], bcond_addr_jmp,bl_id_s);
+                //cout<<bl_count;
+                ul_32 res_cal_beq = cal_beq(addr[i], mcode[i]);
+                fs<<"0x"<<hex<<res_cal_beq;
+                printf("cal_beq:0x%x\n",res_cal_beq);
+                printf("\n");
+            }
+            else if(mcode_instruc(mcode[i]) == "b") {
+                cout<<i<<" is b"<<endl;
+                //查询addr_jmp的位置
+                // int addr_jmp_startid;
+                // for(int k = instruct_startid + 8;;k++) {
+                //     if(v[i][k] != ' ') {
+                //         addr_jmp_startid = k;
+                //         break;
+                //     }
+                // }
+                //
+                ll_64 b_addr_jmp = cal_b_addr_jmp(addr[i], mcode[i]);
+                bl_count = cal_bl_count(addr[i], b_addr_jmp, bl_id_s);
+            
+                //cout<<"bl_count:"<<bl_count;
+                ul_32 res_cal_b = cal_b(addr[i], mcode[i]);
+                fs<<"0x"<<hex<<res_cal_b;
+                printf("cal_b:0x%x\n",res_cal_b);
+                
+                printf("\n");
+            }
+            else if(mcode_instruc(mcode[i]) == "cbz") {
+                cout<<i<<" is cbz"<<endl;
+                ll_64 cbz_addr_jmp = cal_cbz_addr_jmp(addr[i], mcode[i]);
+                //printf("cbz_addr_jmp:0x%llx\n",cbz_addr_jmp);
+                bl_count = cal_bl_count(addr[i], cbz_addr_jmp, bl_id_s);
+                //cout<<"bl_count:"<<bl_count<<",";
+                ul_32 res_cal_cbz = cal_cbz(addr[i], mcode[i]);
+                fs<<"0x"<<hex<<res_cal_cbz;
+                printf("cal_cbz:0x%x\n",res_cal_cbz);
+                printf("\n");
+            }
+            else if(mcode_instruc(mcode[i]) == "cbnz") {
+                cout<<i<<" is cbnz"<<endl;
+                ll_64 cbnz_addr_jmp = cal_cbnz_addr_jmp(addr[i], mcode[i]);
+                //printf("cbnz_addr_jmp:0x%llx\n",cbnz_addr_jmp);
+                bl_count = cal_bl_count(addr[i], cbnz_addr_jmp, bl_id_s);
+                //cout<<"bl_count:"<<bl_count<<",";
+                ul_32 res_cal_cbnz = cal_cbnz(addr[i], mcode[i]);
+                fs<<"0x"<<hex<<res_cal_cbnz;
+                printf("cal_cbnz:0x%x\n",res_cal_cbnz);
+                printf("\n");
+
+            } 
+                
+            else if(mcode_instruc(mcode[i]) == "tbz") {
+                cout<<i<<" is tbz"<<endl;
+                //
+                ll_64 tbz_addr_jmp = cal_tbz_addr_jmp(addr[i], mcode[i]);
+                //printf("cbnz_addr_jmp:0x%llx\n",cbnz_addr_jmp);
+                bl_count = cal_bl_count(addr[i], tbz_addr_jmp, bl_id_s);
+                //cout<<"bl_count:"<<bl_count<<",";
+                ul_32 res_cal_tbz = cal_tbz(addr[i], mcode[i]);
+                fs<<"0x"<<hex<<res_cal_tbz;
+                printf("cal_tbz:0x%x\n",res_cal_tbz);
+                printf("\n");
+            }
+            else if(mcode_instruc(mcode[i]) == "tbnz") {
+                cout<<i<<" is tbnz"<<endl;
+                ll_64 tbnz_addr_jmp = cal_tbnz_addr_jmp(addr[i], mcode[i]);
+                //printf("tbnz_addr_jmp:0x%llx\n",tbnz_addr_jmp);
+                bl_count = cal_bl_count(addr[i], tbnz_addr_jmp, bl_id_s);
+                //cout<<"bl_count:"<<bl_count<<",";
+                ul_32 res_cal_tbnz = cal_tbnz(addr[i], mcode[i]);
+                fs<<"0x"<<hex<<res_cal_tbnz;
+                printf("cal_tbnz:0x%x\n",res_cal_tbnz);
+                printf("\n");
+        
+            }
+            else {
+                cout<<i<<":";
+                fs<<"0x"<<hex<<mcode[i];
+                //printf("mcode:0x%x\n",mcode[i]);
+            }
+            if(i != count - 1) {
+                fs<<",";
+            }
+            if(i % 5 == 0) {
+                //fs<<endl;
+            }
+        }
+        fs<<"};"<<endl;
+        fs.close();
     }
     //遍历变量
     for(set<string>::iterator it = varlist.begin(); it != varlist.end(); it ++) {

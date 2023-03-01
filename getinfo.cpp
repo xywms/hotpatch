@@ -726,7 +726,7 @@ int main() {
     cout<<"请输入sudo密码:";
     cin>>sudo_password;
     //进行编译
-    //cmdopen("cd " + kernelcodepath + "&&echo " + sudo_password + " | sudo -S ./testmake.sh ");
+    cmdopen("cd " + kernelcodepath + "&&echo " + sudo_password + " | sudo -S ./testmake.sh ");
 
     //清空文件内容
     cmdopen("cd " + kernelcodepath + "&& " + "rm -rf result.txt");
